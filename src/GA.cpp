@@ -4,10 +4,11 @@
 #include <cmath>
 #include <limits>
 
-GeneticAlgorithm::GeneticAlgorithm(const Eigen::VectorXd& X, const Eigen::VectorXd& Y, int n, int pop_size, int generations, double mutation_rate, int tournament_size)
-    : X(X), Y(Y), n(n), pop_size(pop_size), generations(generations), mutation_rate(mutation_rate), tournament_size(tournament_size) {
-    rng.seed(0);  // Set seed for reproducibility
-    genome_length = n + 1;
+GeneticAlgorithm::GeneticAlgorithm(const Eigen::MatrixXd& X, const Eigen::VectorXd& Z, int n, int m, 
+                                   int pop_size, int generations, double mutation_rate, int tournament_size)
+    : X(X), Z(Z), n(n), m(m), pop_size(pop_size), generations(generations), mutation_rate(mutation_rate), tournament_size(tournament_size) {
+    rng.seed(0);   
+    genome_length = (n + 1) * (m + 1);  
 }
 
 void GeneticAlgorithm::run() {
@@ -54,17 +55,15 @@ void GeneticAlgorithm::run() {
         }
     }
 
-    // Final model training with the best genome
     compute_final_model();
 }
 
 void GeneticAlgorithm::print_results() {
-    std::cout << "\nBest polynomial degrees: [";
-    for (size_t i = 0; i < degrees.size(); ++i) {
-        std::cout << degrees[i];
-        if (i < degrees.size() - 1) std::cout << ", ";
+    std::cout << "\nSelected monomials (x^i y^j):\n";
+    for (const auto& term : selected_terms) {
+        std::cout << "x^" << term.first << " y^" << term.second << "\n";
     }
-    std::cout << "]\nCoefficients: " << coeffs.transpose() << "\nIntercept: " << intercept << std::endl;
+    std::cout << "Coefficients: " << coeffs.transpose() << "\nIntercept: " << intercept << std::endl;
 }
 
 std::vector<std::vector<int>> GeneticAlgorithm::initial_population() {
@@ -82,43 +81,56 @@ std::vector<std::vector<int>> GeneticAlgorithm::initial_population() {
 }
 
 double GeneticAlgorithm::fitness_function(const std::vector<int>& genome) {
-    // Select polynomial degrees based on the genome
-    std::vector<int> selected_degrees;
-    for (int i = 0; i < genome.size(); ++i) {
-        if (genome[i] == 1) {
-            selected_degrees.push_back(i + 1);
+    std::vector<std::pair<int, int>> selected_terms_local;
+    for (int idx = 0; idx < genome.size(); ++idx) {
+        if (genome[idx] == 1) {
+            int i = idx / (m + 1);
+            int j = idx % (m + 1);
+            selected_terms_local.emplace_back(i, j);
         }
     }
 
-    if (selected_degrees.empty()) {
-        return 1e6;  // Penalize if no terms are selected
+    if (selected_terms_local.empty()) {
+        return 1e6;  
     }
 
     // Create polynomial features
-    Eigen::MatrixXd X_poly(X.size(), selected_degrees.size());
-    for (int i = 0; i < X.size(); ++i) {
-        for (size_t j = 0; j < selected_degrees.size(); ++j) {
-            X_poly(i, j) = std::pow(X(i), selected_degrees[j]);
+    Eigen::MatrixXd X_poly(X.rows(), selected_terms_local.size());
+    for (int sample = 0; sample < X.rows(); ++sample) {
+        for (size_t idx = 0; idx < selected_terms_local.size(); ++idx) {
+            int i = selected_terms_local[idx].first;
+            int j = selected_terms_local[idx].second;
+            X_poly(sample, idx) = std::pow(X(sample, 0), i) * std::pow(X(sample, 1), j);
         }
     }
 
-    // Fit linear regression using Normal Equation
     Eigen::MatrixXd X_poly_augmented = Eigen::MatrixXd::Ones(X_poly.rows(), X_poly.cols() + 1);
     X_poly_augmented.block(0, 1, X_poly.rows(), X_poly.cols()) = X_poly;
 
-    Eigen::VectorXd theta = (X_poly_augmented.transpose() * X_poly_augmented).ldlt().solve(X_poly_augmented.transpose() * Y);
+    Eigen::VectorXd theta = (X_poly_augmented.transpose() * X_poly_augmented).ldlt().solve(X_poly_augmented.transpose() * Z);
 
-    // Predict Y
-    Eigen::VectorXd Y_pred = X_poly_augmented * theta;
+    Eigen::VectorXd Z_pred = X_poly_augmented * theta;
 
-    // Compute RMSE
-    double rmse = std::sqrt((Y - Y_pred).squaredNorm() / Y.size());
+    double rmse = std::sqrt((Z - Z_pred).squaredNorm() / Z.size());
 
-    double penalty_factor = 0.01; 
-    double penalty = penalty_factor * selected_degrees.size();
+    double penalty_factor = 0.1;
+    double penalty = penalty_factor * selected_terms_local.size();
+
+    double small_coeff_penalty_factor = 1.0; 
+    double epsilon = 1e-3;                   
+    int small_coeff_count = 0;
+
+    for (int k = 1; k < theta.size(); ++k) { 
+        if (std::abs(theta(k)) < epsilon) {
+            small_coeff_count++;
+        }
+    }
+
+    penalty += small_coeff_penalty_factor * small_coeff_count;
 
     return rmse + penalty;
 }
+
 
 std::vector<int> GeneticAlgorithm::tournament_selection(const std::vector<double>& fitnesses) {
     std::uniform_int_distribution<int> index_dist(0, population.size() - 1);
@@ -129,12 +141,11 @@ std::vector<int> GeneticAlgorithm::tournament_selection(const std::vector<double
         participants.push_back({ population[idx], fitnesses[idx] });
     }
 
-    // Sort participants by fitness
-    std::sort(participants.begin(), participants.end(), [](const std::pair<std::vector<int>, double>& a, const std::pair<std::vector<int>, double>& b) {
+     std::sort(participants.begin(), participants.end(), [](const std::pair<std::vector<int>, double>& a, const std::pair<std::vector<int>, double>& b) {
         return a.second < b.second;
     });
 
-    return participants[0].first;  // Return the genome of the best participant
+    return participants[0].first;   
 }
 
 std::pair<std::vector<int>, std::vector<int>> GeneticAlgorithm::crossover(const std::vector<int>& parent1, const std::vector<int>& parent2) {
@@ -163,27 +174,29 @@ std::vector<int> GeneticAlgorithm::mutate(const std::vector<int>& genome) {
 }
 
 void GeneticAlgorithm::compute_final_model() {
-    // Determine the degrees used in the best genome
-    degrees.clear();
-    for (int i = 0; i < best_genome.size(); ++i) {
-        if (best_genome[i] == 1) {
-            degrees.push_back(i + 1);
+    // Map genome indices to monomial exponents (i, j)
+    selected_terms.clear();
+    for (int idx = 0; idx < best_genome.size(); ++idx) {
+        if (best_genome[idx] == 1) {
+            int i = idx / (m + 1);
+            int j = idx % (m + 1);
+            selected_terms.emplace_back(i, j);
         }
     }
 
-    // Create polynomial features
-    Eigen::MatrixXd X_poly(X.size(), degrees.size());
-    for (int i = 0; i < X.size(); ++i) {
-        for (size_t j = 0; j < degrees.size(); ++j) {
-            X_poly(i, j) = std::pow(X(i), degrees[j]);
+     Eigen::MatrixXd X_poly(X.rows(), selected_terms.size());
+    for (int sample = 0; sample < X.rows(); ++sample) {
+        for (size_t idx = 0; idx < selected_terms.size(); ++idx) {
+            int i = selected_terms[idx].first;
+            int j = selected_terms[idx].second;
+            X_poly(sample, idx) = std::pow(X(sample, 0), i) * std::pow(X(sample, 1), j);
         }
     }
 
-    // Fit linear regression using Normal Equation
     Eigen::MatrixXd X_poly_augmented = Eigen::MatrixXd::Ones(X_poly.rows(), X_poly.cols() + 1);
     X_poly_augmented.block(0, 1, X_poly.rows(), X_poly.cols()) = X_poly;
 
-    Eigen::VectorXd theta = (X_poly_augmented.transpose() * X_poly_augmented).ldlt().solve(X_poly_augmented.transpose() * Y);
+    Eigen::VectorXd theta = (X_poly_augmented.transpose() * X_poly_augmented).ldlt().solve(X_poly_augmented.transpose() * Z);
 
     coeffs = theta.segment(1, theta.size() - 1);
     intercept = theta(0);

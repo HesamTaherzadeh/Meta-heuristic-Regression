@@ -2,51 +2,54 @@
 #include <vector>
 #include <random>
 #include <Eigen/Dense>
+#include <yaml-cpp/yaml.h>
 #include "GA.hpp"
 
-int main() {
-    // Random number generator
-    std::random_device rd;
-    std::mt19937 rng(rd());
-    rng.seed(0); // Set seed for reproducibility
+int main(int argc, char* argv[]) {
+    if (argc < 2) {
+        std::cerr << "Please provide the path to the YAML configuration file." << std::endl;
+        return -1;
+    }
 
-    // Sample data generation (replace this with your actual data)
+    std::string yaml_file = argv[1];
+    YAML::Node config = YAML::LoadFile(yaml_file);
+
+    int data_size = config["data_size"].as<int>();
+    int n = config["n"].as<int>();
+    int m = config["m"].as<int>();
+    int population_size = config["population_size"].as<int>();
+    int generations = config["generations"].as<int>();
+    double mutation_rate = config["mutation_rate"].as<double>();
+    int tournament_size = config["tournament_size"].as<int>();
+    int rng_seed = config["rng_seed"].as<int>();
+
+    std::mt19937 rng(rng_seed);
+
     std::uniform_real_distribution<double> uni_dist(-10.0, 10.0);
     std::normal_distribution<double> norm_dist(0.0, 10.0);
 
-    int data_size = 10000;
-    Eigen::VectorXd X(data_size);
-    Eigen::VectorXd Y(data_size);
+    Eigen::MatrixXd X_data(data_size, 2);  
+    Eigen::VectorXd Z_data(data_size);
 
     for (int i = 0; i < data_size; ++i) {
-        X(i) = uni_dist(rng);
-        double xi = X(i);
-        // Explicit high-degree polynomial
-        double yi = - 0.2 * std::pow(xi, 4)
-                  + 0.3 * std::pow(xi, 3)
-                  - 0.4 * std::pow(xi, 2)
-                  + 0.5 * xi
-                  + 1.0;  
-        yi += norm_dist(rng);  
-        Y(i) = yi;
+        double xi = uni_dist(rng);
+        double yi = uni_dist(rng);
+        X_data(i, 0) = xi; 
+        X_data(i, 1) = yi; 
+
+        double zi = -0.2 * std::pow(xi, 3) * std::pow(yi, 5)
+                    + 0.3 * std::pow(xi, 2) * yi
+                    - 0.4 * xi * std::pow(yi, 2)
+                    + 0.5 * xi * yi
+                    + 1.0;
+        zi += norm_dist(rng);
+        Z_data(i) = zi;
     }
 
-    // Maximum polynomial degree
-    int n = 10;
+    GeneticAlgorithm ga(X_data, Z_data, n, m, population_size, generations, mutation_rate, tournament_size);
 
-    // Genetic Algorithm parameters
-    int population_size = 100;
-    int generations = 50;
-    double mutation_rate = 0.1;  
-    int tournament_size = 3;     
-
-    // Create an instance of GeneticAlgorithm
-    GeneticAlgorithm ga(X, Y, n, population_size, generations, mutation_rate, tournament_size);
-
-    // Run the genetic algorithm
     ga.run();
 
-    // Print the results
     ga.print_results();
 
     return 0;

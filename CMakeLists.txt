@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Find Eigen library
 find_package(Eigen3 3.3 REQUIRED NO_MODULE)
+find_package(yaml-cpp)
 
 # Include directories
 include_directories(${EIGEN3_INCLUDE_DIR})
@@ -21,7 +22,7 @@ set(SOURCES
 add_executable(genetic_algorithm ${SOURCES})
 
 # Link libraries
-target_link_libraries(genetic_algorithm Eigen3::Eigen)
+target_link_libraries(genetic_algorithm Eigen3::Eigen yaml-cpp)
 
 # Enable testing
 enable_testing()
@@ -36,7 +37,6 @@ set(TEST_SOURCES
     src/GA.cpp  # Include source files needed for the tests
 )
 
-# Add test executable
 add_executable(runTests ${TEST_SOURCES})
 
 # Link test executable against GTest and Eigen

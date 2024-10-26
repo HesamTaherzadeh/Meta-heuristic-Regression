@@ -7,18 +7,19 @@
 
 class GeneticAlgorithm {
 public:
-    GeneticAlgorithm(const Eigen::VectorXd& X, const Eigen::VectorXd& Y, int n, int pop_size, int generations, double mutation_rate, int tournament_size);
+    GeneticAlgorithm(const Eigen::MatrixXd& X, const Eigen::VectorXd& Z, int n, int m, int pop_size, int generations, double mutation_rate, int tournament_size);
     void run();
     void print_results();
-    const std::vector<int>& getDegrees() const { return degrees; }
+    const std::vector<std::pair<int, int>>& getSelectedTerms() const { return selected_terms; }
     const Eigen::VectorXd& getCoefficients() const { return coeffs; }
     double getIntercept() const { return intercept; }
 
 private:
     // Member variables
-    Eigen::VectorXd X;
-    Eigen::VectorXd Y;
-    int n;
+    Eigen::MatrixXd X; // Data matrix with two variables (x and y)
+    Eigen::VectorXd Z; // Target variable
+    int n;             // Maximum degree for x
+    int m;             // Maximum degree for y
     int pop_size;
     int generations;
     double mutation_rate;
@@ -30,7 +31,7 @@ private:
     std::mt19937 rng;
 
     // Final model parameters
-    std::vector<int> degrees;
+    std::vector<std::pair<int, int>> selected_terms; // Selected monomial terms (i, j)
     Eigen::VectorXd coeffs;
     double intercept;
 

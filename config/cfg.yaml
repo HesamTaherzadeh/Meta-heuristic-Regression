@@ -1,0 +1,8 @@
+data_size: 100
+n: 5
+m: 5
+population_size: 100
+generations: 100
+mutation_rate: 0.01
+tournament_size: 3
+rng_seed: 2
