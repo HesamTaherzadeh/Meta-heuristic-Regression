@@ -22,6 +22,11 @@ int main(int argc, char* argv[]) {
     double mutation_rate = config["mutation_rate"].as<double>();
     int tournament_size = config["tournament_size"].as<int>();
     int rng_seed = config["rng_seed"].as<int>();
+    int patience = config["patience"].as<int>();
+    double rmse_lambda = config["rmse_lambda"].as<double>();
+    double coeff_lambda = config["coeff_lambda"].as<double>();
+
+
 
     std::mt19937 rng(rng_seed);
 
@@ -46,7 +51,7 @@ int main(int argc, char* argv[]) {
         Z_data(i) = zi;
     }
 
-    GeneticAlgorithm ga(X_data, Z_data, n, m, population_size, generations, mutation_rate, tournament_size);
+    GeneticAlgorithm ga(X_data, Z_data, n, m, population_size, generations, mutation_rate, tournament_size, patience, coeff_lambda, rmse_lambda);
 
     ga.run();
 

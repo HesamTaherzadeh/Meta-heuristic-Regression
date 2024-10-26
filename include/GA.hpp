@@ -4,10 +4,19 @@
 #include <vector>
 #include <random>
 #include <Eigen/Dense>
+#include <fstream>
+#include <iostream>
+#include <algorithm>
+#include <cmath>
+#include <limits>
+#include <chrono>
+#include <iomanip>
+#include <sstream>
 
 class GeneticAlgorithm {
 public:
-    GeneticAlgorithm(const Eigen::MatrixXd& X, const Eigen::VectorXd& Z, int n, int m, int pop_size, int generations, double mutation_rate, int tournament_size);
+    GeneticAlgorithm(const Eigen::MatrixXd& X, const Eigen::VectorXd& Z, int n, int m, 
+                     int pop_size, int generations, double mutation_rate, int tournament_size, int patience, double coeff_lambda, double rmse_lambda);
     void run();
     void print_results();
     const std::vector<std::pair<int, int>>& getSelectedTerms() const { return selected_terms; }
@@ -15,23 +24,26 @@ public:
     double getIntercept() const { return intercept; }
 
 private:
-    // Member variables
-    Eigen::MatrixXd X; // Data matrix with two variables (x and y)
-    Eigen::VectorXd Z; // Target variable
-    int n;             // Maximum degree for x
-    int m;             // Maximum degree for y
+    Eigen::MatrixXd X;
+    Eigen::VectorXd Z; 
+    int n;           
+    int m;            
     int pop_size;
     int generations;
+    int patience;
     double mutation_rate;
+    int log_count;
     int tournament_size;
     int genome_length;
     std::vector<std::vector<int>> population;
     std::vector<int> best_genome;
     double best_fitness;
     std::mt19937 rng;
+    double rmse_lambda, coeff_lambda;
+    std::string filename;
 
     // Final model parameters
-    std::vector<std::pair<int, int>> selected_terms; // Selected monomial terms (i, j)
+    std::vector<std::pair<int, int>> selected_terms;
     Eigen::VectorXd coeffs;
     double intercept;
 

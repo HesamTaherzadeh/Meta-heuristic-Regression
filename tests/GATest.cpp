@@ -4,6 +4,9 @@
 #include <gtest/gtest.h>
 #include <Eigen/Dense>
 
+#define LAMBDA_1 0.6
+#define LAMBDA_2 0.4
+
 TEST(GeneticAlgorithmTest, InitializationTest) {
     // Test if the GeneticAlgorithm initializes correctly
     Eigen::MatrixXd X_data(5, 2);
@@ -21,8 +24,9 @@ TEST(GeneticAlgorithmTest, InitializationTest) {
     int generations = 10;
     double mutation_rate = 0.01;
     int tournament_size = 3;
+    int patience = 5;
 
-    GeneticAlgorithm ga(X_data, Z, n, m, population_size, generations, mutation_rate, tournament_size);
+    GeneticAlgorithm ga(X_data, Z, n, m, population_size, generations, mutation_rate, tournament_size, patience, LAMBDA_1, LAMBDA_2);
     EXPECT_NO_THROW(ga.run());
 }
 
@@ -45,8 +49,9 @@ TEST(GeneticAlgorithmTest, CorrectnessTest) {
     int generations = 50;
     double mutation_rate = 0.001;
     int tournament_size = 3;
+    int patience = 25;
 
-    GeneticAlgorithm ga(X_data, Z, n, m, population_size, generations, mutation_rate, tournament_size);
+    GeneticAlgorithm ga(X_data, Z, n, m, population_size, generations, mutation_rate, tournament_size, patience, LAMBDA_1, LAMBDA_2);
     ga.run();
 
      const std::vector<std::pair<int, int>>& selected_terms = ga.getSelectedTerms();
@@ -115,8 +120,11 @@ TEST(GeneticAlgorithmTest, HighDegreePolynomialLargeDatasetTest) {
     int generations = 100;
     double mutation_rate = 0.1;
     int tournament_size = 3;
+    int patience = generations / 2;
+    double lambda_2 = 0.1;
+    double lambda_1 = 1;
 
-    GeneticAlgorithm ga(X_data, Z, n, m, population_size, generations, mutation_rate, tournament_size);
+    GeneticAlgorithm ga(X_data, Z, n, m, population_size, generations, mutation_rate, tournament_size, patience, lambda_1, lambda_2);
     ga.run();
 
     const std::vector<std::pair<int, int>>& selected_terms = ga.getSelectedTerms();
