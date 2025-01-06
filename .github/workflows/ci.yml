@@ -9,47 +9,55 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Install Dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y build-essential cmake libeigen3-dev python3 python3-pip python3-dev
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            libeigen3-dev \
+            python3 \
+            python3-pip \
+            python3-dev
 
-    - name: Install Google Test
-      run: |
-        sudo apt-get install -y libgtest-dev
-        cd /usr/src/gtest
-        sudo cmake .
-        sudo make
-        sudo cp lib/*.a /usr/lib
+      - name: Install Google Test
+        run: |
+          sudo apt-get install -y libgtest-dev
+          cd /usr/src/gtest
+          sudo cmake .
+          sudo make
+          sudo cp lib/*.a /usr/lib
 
-    - name: Install yaml-cpp
-      run: |
-        sudo apt-get install -y libyaml-cpp-dev
+      - name: Install yaml-cpp
+        run: |
+          sudo apt-get install -y libyaml-cpp-dev
 
-    - name: Install Pybind11
-      run: |
-        sudo apt-get install -y pybind11-dev
+      - name: Install Pybind11
+        run: |
+          # pybind11-dev provides the pybind11Config.cmake
+          # python3-pybind11 ensures Python-specific parts
+          sudo apt-get install -y pybind11-dev python3-pybind11
 
-    - name: Build C++ Project and Python Bindings
-      run: |
-        mkdir -p build
-        cd build
-        cmake -DPYTHON_EXECUTABLE=$(which python3) ..
-        make
+      - name: Build C++ Project and Python Bindings
+        run: |
+          mkdir -p build
+          cd build
+          # Ensure that CMake knows which Python to use
+          cmake -DPYTHON_EXECUTABLE=$(which python3) ..
+          make
 
-    - name: Run C++ Tests
-      run: |
-        cd build
-        ctest --verbose
+      - name: Run C++ Tests
+        run: |
+          cd build
+          ctest --verbose
 
-    - name: Verify Python Bindings
-      run: |
-        cd build
-        python3 -c "import genetic_algorithm; print('Python bindings built and imported successfully')"
+      - name: Verify Python Bindings
+        run: |
+          cd build
+          python3 -c "import genetic_algorithm; print('Python bindings built and imported successfully')"
