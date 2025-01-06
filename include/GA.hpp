@@ -22,6 +22,8 @@ public:
     const std::vector<std::pair<int, int>>& getSelectedTerms() const { return selected_terms; }
     const Eigen::VectorXd& getCoefficients() const { return coeffs; }
     double getIntercept() const { return intercept; }
+    const std::vector<int>& getBestGenome() const { return best_genome; }
+    void setFileLogPath(std::string filename);
 
 private:
     Eigen::MatrixXd X;

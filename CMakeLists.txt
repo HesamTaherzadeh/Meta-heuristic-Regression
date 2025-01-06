@@ -44,3 +44,23 @@ target_link_libraries(runTests GTest::gtest_main Eigen3::Eigen pthread)
 
 # Add test to CTest
 add_test(NAME GeneticAlgorithmTest COMMAND runTests)
+
+# Find Pybind11
+find_package(pybind11 REQUIRED)
+
+# Include directories for Pybind11
+include_directories(${pybind11_INCLUDE_DIRS})
+
+# Add the Python module
+pybind11_add_module(genetic_algorithm_module
+    src/GA.cpp       
+    src/ga_bindings.cpp
+)
+
+# Link libraries to the module
+target_link_libraries(genetic_algorithm_module PRIVATE Eigen3::Eigen)
+
+# Set properties for the module (optional)
+set_target_properties(genetic_algorithm_module PROPERTIES
+    OUTPUT_NAME "genetic_algorithm"  
+)

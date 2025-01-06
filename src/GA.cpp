@@ -21,6 +21,10 @@ GeneticAlgorithm::GeneticAlgorithm(const Eigen::MatrixXd& X, const Eigen::Vector
 
 }
 
+void GeneticAlgorithm::setFileLogPath(std::string filename){
+    this->filename = filename;
+}
+
 void GeneticAlgorithm::run() {
     population = initial_population();
     best_fitness = std::numeric_limits<double>::infinity();
@@ -242,3 +246,4 @@ void GeneticAlgorithm::compute_final_model() {
     coeffs = theta.segment(1, theta.size() - 1);
     intercept = theta(0);
 }
+
