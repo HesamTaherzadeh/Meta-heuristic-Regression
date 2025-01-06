@@ -58,6 +58,38 @@ This project implements a Genetic Algorithm (GA) to perform bivariate polynomial
     ```bash
     ./runTests
     ```
+---
+
+### Python Setup
+
+To use the Python bindings for the Genetic Algorithm:
+
+#### 1. **Ensure Dependencies**
+Install the required Python dependencies:
+```bash
+python3 -m pip install pybind11 numpy
+```
+
+#### 2. **Build and Install the Python Module**
+Run the following commands to build and install the Python bindings:
+```bash
+python3 setup.py build
+python3 setup.py install --user
+```
+
+#### 3. **Verify the Installation**
+After installation, you can verify that the Python bindings work:
+```python
+import genetic_algorithm as ga
+print("Python bindings successfully imported!")
+```
+
+#### 4. **Using the Python Bindings**
+You can now use the `genetic_algorithm` module to run the algorithm directly from Python. a test is provided:
+```bash 
+python test_python.py config/cfg.yaml
+```
+---
 
 ## Configuration Guide
 
